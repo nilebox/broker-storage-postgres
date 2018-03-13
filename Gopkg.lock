@@ -49,10 +49,11 @@
     "pkg/stateful",
     "pkg/stateful/retry",
     "pkg/stateful/storage",
+    "pkg/stateful/task",
     "pkg/util",
     "pkg/zappers"
   ]
-  revision = "346361b2e00bea0ae6763055653ddabc52f79f95"
+  revision = "95ada7b5ed15216611e7d49bad28088a968a8825"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -94,6 +95,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "23f9a5131c07d4ae540c4445b0ed5b419051dd78d06716cf3a51e1f63c23a918"
+  inputs-digest = "921e503e2ee967937fa80cf56c67a907c9d9ab13d84caf35c14e4ed6482dcb0a"
   solver-name = "gps-cdcl"
   solver-version = 1

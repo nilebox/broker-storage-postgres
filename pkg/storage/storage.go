@@ -2,13 +2,14 @@ package storage
 
 import (
 	"encoding/json"
+	"github.com/nilebox/broker-server/pkg/stateful/retry"
 	brokerstorage "github.com/nilebox/broker-server/pkg/stateful/storage"
 )
 
 type postgresStorage struct {
 }
 
-func NewPostgresStorage() brokerstorage.Storage {
+func NewPostgresStorage() retry.StorageWithLease {
 	return &postgresStorage{}
 }
 
@@ -28,10 +29,10 @@ func (s *postgresStorage) GetInstance(instanceId string) (*brokerstorage.Instanc
 	return nil, nil
 }
 
-func (s *postgresStorage) ExtendLease(instances []brokerstorage.InstanceRecord) error {
+func (s *postgresStorage) ExtendLease(instances []*brokerstorage.InstanceRecord) error {
 	return nil
 }
 
-func (s *postgresStorage) LeaseAbandonedInstances(maxBatchSize uint32) []brokerstorage.InstanceRecord {
+func (s *postgresStorage) LeaseAbandonedInstances(maxBatchSize uint32) []*brokerstorage.InstanceRecord {
 	return nil
 }

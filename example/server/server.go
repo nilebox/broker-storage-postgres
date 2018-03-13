@@ -5,6 +5,7 @@ import (
 
 	"github.com/nilebox/broker-server/pkg/server"
 	"github.com/nilebox/broker-server/pkg/stateful"
+	"github.com/nilebox/broker-server/pkg/stateful/retry"
 	examplebroker "github.com/nilebox/broker-storage-postgres/example/broker"
 	"github.com/nilebox/broker-storage-postgres/pkg/storage"
 	"go.uber.org/zap"
@@ -18,10 +19,18 @@ func (b *ExampleServer) Run(ctx context.Context) (returnErr error) {
 	log := ctx.Value("log").(*zap.Logger)
 	_ = log
 
-	s := storage.NewPostgresStorage()
-	c := stateful.NewStatefulController(ctx, examplebroker.Catalog(), s)
+	// Create a storage for OSB
+	storage := storage.NewPostgresStorage()
 
-	// TODO start a scheduler and watch dog
+	// Start a controller that runs actual broker implementation asynchronously
+	broker, err := examplebroker.NewExampleBroker(log)
+	if err != nil {
+		panic("Broker creation failed: " + err.Error())
+	}
+	retryController := retry.NewRetryController(storage, broker)
+	retryController.Start(ctx)
 
-	return server.Run(ctx, b.Addr, c)
+	// Run a REST server
+	controller := stateful.NewStatefulController(ctx, examplebroker.Catalog(), storage)
+	return server.Run(ctx, b.Addr, controller)
 }
