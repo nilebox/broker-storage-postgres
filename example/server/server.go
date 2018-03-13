@@ -30,7 +30,12 @@ func (b *ExampleServer) Run(ctx context.Context) (returnErr error) {
 	retryController := retry.NewRetryController(storage, broker)
 	retryController.Start(ctx)
 
+	// Wrap a storage into a decorator that submits the broker task
+	// after every instance update.
+	// We'll use it for REST controller
+	storageWithSubmitter := retryController.CreateStorageWithSubmitter()
+
 	// Run a REST server
-	controller := stateful.NewStatefulController(ctx, examplebroker.Catalog(), storage)
+	controller := stateful.NewStatefulController(ctx, examplebroker.Catalog(), storageWithSubmitter)
 	return server.Run(ctx, b.Addr, controller)
 }

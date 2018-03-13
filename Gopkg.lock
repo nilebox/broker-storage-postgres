@@ -53,7 +53,7 @@
     "pkg/util",
     "pkg/zappers"
   ]
-  revision = "95ada7b5ed15216611e7d49bad28088a968a8825"
+  revision = "697dc11146ee4ad67280ca54656b0d12290656cd"
 
 [[projects]]
   name = "github.com/pkg/errors"
