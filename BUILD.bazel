@@ -1,0 +1,14 @@
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+gazelle(
+    name = "gazelle",
+    external = "vendored",
+    prefix = "github.com/nilebox/broker-storage-postgres",
+)
+
+gazelle(
+    name = "gazelle_fix",
+    command = "fix",
+    external = "vendored",
+    prefix = "github.com/nilebox/broker-storage-postgres",
+)

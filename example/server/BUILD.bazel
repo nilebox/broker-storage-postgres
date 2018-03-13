@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["server.go"],
+    importpath = "github.com/nilebox/broker-storage-postgres/example/server",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//example/controller:go_default_library",
+        "//pkg/server:go_default_library",
+        "//vendor/go.uber.org/zap:go_default_library",
+    ],
+)

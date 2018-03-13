@@ -1,0 +1,12 @@
+required = [
+    "github.com/bazelbuild/buildtools/buildozer",
+    "github.com/bazelbuild/buildtools/buildifier"
+]
+
+[prune]
+  non-go = true
+  go-tests = true
+
+[[constraint]]
+  branch = "master" # latest
+  name = "github.com/bazelbuild/buildtools"
