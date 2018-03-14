@@ -9,9 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/nilebox/broker-server/example/server"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"github.com/nilebox/broker-storage-postgres/example/server"
 )
 
 const (

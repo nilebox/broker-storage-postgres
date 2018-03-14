@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "db.go",
+        "storage.go",
+    ],
+    importpath = "github.com/nilebox/broker-storage-postgres/pkg/storage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/lib/pq:go_default_library",
+        "//vendor/github.com/nilebox/broker-server/pkg/stateful/retry:go_default_library",
+        "//vendor/github.com/nilebox/broker-server/pkg/stateful/storage:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["storage_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/nilebox/broker-server/pkg/stateful/retry:go_default_library"],
+)

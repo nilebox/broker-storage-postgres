@@ -50,8 +50,6 @@
   branch = "master"
   name = "github.com/nilebox/broker-server"
   packages = [
-    "example/controller",
-    "example/server",
     "pkg/api",
     "pkg/controller",
     "pkg/server",
@@ -62,7 +60,7 @@
     "pkg/util",
     "pkg/zappers"
   ]
-  revision = "5a97ae80ba45d4a18448c217021e467ed7cbd5ec"
+  revision = "b0cfb954bf11ff350c8439e7bfb65ada21eab0fb"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -104,6 +102,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b58615432b6d6016ed6d859096be2bfd0a69384adf7ff0a1d73c5839b2c6b79f"
+  inputs-digest = "a66732dbeee1dcbc3ad2faf77d619878c39eccc171095084810671fef7ff0c8c"
   solver-name = "gps-cdcl"
   solver-version = 1
