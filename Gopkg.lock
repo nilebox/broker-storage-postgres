@@ -39,6 +39,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "88edab0803230a3898347e77b474f8c1820a1f20"
+
+[[projects]]
+  branch = "master"
   name = "github.com/nilebox/broker-server"
   packages = [
     "example/controller",
@@ -53,7 +62,7 @@
     "pkg/util",
     "pkg/zappers"
   ]
-  revision = "697dc11146ee4ad67280ca54656b0d12290656cd"
+  revision = "5a97ae80ba45d4a18448c217021e467ed7cbd5ec"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -95,6 +104,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "921e503e2ee967937fa80cf56c67a907c9d9ab13d84caf35c14e4ed6482dcb0a"
+  inputs-digest = "b58615432b6d6016ed6d859096be2bfd0a69384adf7ff0a1d73c5839b2c6b79f"
   solver-name = "gps-cdcl"
   solver-version = 1
