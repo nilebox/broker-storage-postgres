@@ -59,14 +59,14 @@ func Catalog() *brokerapi.Catalog {
 	return &catalog
 }
 
-func (c *exampleBroker) CreateInstance(instanceId string, parameters json.RawMessage) (task.ExecutionState, json.RawMessage, error) {
-	return "", nil, nil
+func (c *exampleBroker) CreateInstance(instanceId string, parameters json.RawMessage) (json.RawMessage, error) {
+	return nil, nil
 }
 
-func (c *exampleBroker) UpdateInstance(instanceId string, parameters json.RawMessage) (task.ExecutionState, json.RawMessage, error) {
-	return "", nil, nil
+func (c *exampleBroker) UpdateInstance(instanceId string, parameters json.RawMessage) (json.RawMessage, error) {
+	return nil, nil
 }
 
-func (c *exampleBroker) DeleteInstance(instanceId string, parameters json.RawMessage) (task.ExecutionState, error) {
-	return "", nil
+func (c *exampleBroker) DeleteInstance(instanceId string, parameters json.RawMessage) error {
+	return nil
 }

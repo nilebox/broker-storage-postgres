@@ -34,12 +34,16 @@ type instanceRow struct {
 const (
 	QueryGetInstance = "SELECT instance_id, service_id, plan_id, parameters, outputs, state, error " +
 		"FROM instance WHERE instance_id = $1"
+	// TODO don't set outputs there
 	QueryInsertInstance = "INSERT INTO instance (instance_id, service_id, plan_id, parameters, outputs, state, created, modified, error) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+	// TODO don't set outputs there
 	QueryUpdateInstance = "UPDATE instance SET plan_id = $1, parameters = $2, outputs = $3, state = $4, modified = $5, error = $6 " +
 		"WHERE instance_id = $7"
 	QueryUpdateInstanceState = "UPDATE instance SET error = $1, state = $2, modified = $3 " +
 		"WHERE instance_id = :instanceId"
+	QueryUpdateInstanceOutputs = "UPDATE instance SET outputs = $1 " +
+		"WHERE instance_id = $2"
 	QueryExtendLease = "UPDATE instance SET modified = $1 " +
 		"WHERE instance_id = ANY($2)"
 	QueryLeaseAbandoned = "UPDATE instance SET modified = $1 " +
@@ -146,6 +150,23 @@ func (s *postgresStorage) UpdateInstanceState(instanceId string, state brokersto
 			instanceId)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to update instance status")
+		}
+		return nil, nil
+	})
+	return err
+}
+
+func (s *postgresStorage) UpdateInstanceOutputs(instanceId string, outputs json.RawMessage) error {
+	outputsStr, err := rawMessageToString(outputs)
+	if err != nil {
+		return err
+	}
+	_, err = db.InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
+		_, err := tx.ExecContext(s.ctx, QueryUpdateInstanceOutputs,
+			outputsStr,
+			instanceId)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to update instance outputs")
 		}
 		return nil, nil
 	})
