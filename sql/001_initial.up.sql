@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS instance (
    parameters TEXT NOT NULL,
    outputs TEXT NOT NULL,
    state TEXT NOT NULL,
+   error TEXT NOT NULL,
    created TIMESTAMP NOT NULL,
    modified TIMESTAMP NOT NULL
 );

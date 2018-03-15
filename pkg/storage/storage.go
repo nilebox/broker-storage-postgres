@@ -33,7 +33,7 @@ type instanceRow struct {
 
 const (
 	QueryGetInstance = "SELECT instance_id, service_id, plan_id, parameters, outputs, state, error " +
-		"FROM instance WHERE external_id = $1"
+		"FROM instance WHERE instance_id = $1"
 	QueryInsertInstance = "INSERT INTO instance (instance_id, service_id, plan_id, parameters, outputs, state, created, modified, error) " +
 		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 	QueryUpdateInstance = "UPDATE instance SET plan_id = $1, parameters = $2, outputs = $3, state = $4, modified = $5, error = $6 " +
@@ -49,7 +49,7 @@ const (
 		"   FOR UPDATE SKIP LOCKED " +
 		"   LIMIT $4 " +
 		") " +
-		"RETURNING external_id, resource_type, parameters, state, error"
+		"RETURNING instance_id, service_id, plan_id, parameters, outputs, state, error"
 )
 
 var (
@@ -90,6 +90,7 @@ func (s *postgresStorage) CreateInstance(instanceSpec *brokerstorage.InstanceSpe
 		Spec: *instanceSpec,
 	}
 	row, err := instanceRecordToRow(instance)
+	row.State = string(brokerstorage.InstanceStateCreateInProgress)
 	row.Created = time.Now()
 	row.Modified = row.Created
 	if err != nil {
@@ -116,6 +117,7 @@ func (s *postgresStorage) UpdateInstance(instanceSpec *brokerstorage.InstanceSpe
 	instanceToUpdate.Spec.Outputs = instanceSpec.Outputs
 
 	row, err := instanceRecordToRow(instanceToUpdate)
+	row.State = string(brokerstorage.InstanceStateUpdateInProgress)
 	row.Modified = time.Now()
 	if err != nil {
 		return err
@@ -155,13 +157,15 @@ func (s *postgresStorage) GetInstance(instanceId string) (*brokerstorage.Instanc
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get instance %s", instanceId)
 	}
-	defer db.Close(rows, nil)
+	var returnErr error
+	defer db.Close(rows, &returnErr)
 
 	row, err := getSingleInstanceRow(rows)
 	if err != nil {
 		return nil, err
 	}
-	return instanceRowToRecord(row)
+	record, returnErr := instanceRowToRecord(row)
+	return record, returnErr
 }
 
 func (s *postgresStorage) ExtendLease(instanceIds []string) error {
@@ -184,21 +188,22 @@ func (s *postgresStorage) LeaseAbandonedInstances(maxBatchSize uint32) ([]*broke
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to lease instances")
 	}
-	defer db.Close(rows, nil)
+	var returnErr error
+	defer db.Close(rows, &returnErr)
 
 	instanceRows, err := getInstanceRows(rows)
 	if err != nil {
-		return nil, err
+		return nil, returnErr
 	}
 	instanceRecords := make([]*brokerstorage.InstanceRecord, 0, len(instanceRows))
 	for i, instanceRow := range instanceRows {
 		instanceRecord, err := instanceRowToRecord(instanceRow)
 		if err != nil {
-			return nil, err
+			return nil, returnErr
 		}
 		instanceRecords[i] = instanceRecord
 	}
-	return instanceRecords, nil
+	return instanceRecords, returnErr
 }
 
 func getInstanceRows(rows *sql.Rows) ([]*instanceRow, error) {
@@ -222,7 +227,7 @@ func getSingleInstanceRow(rows *sql.Rows) (*instanceRow, error) {
 
 func scanInstanceRow(rows *sql.Rows) (*instanceRow, error) {
 	var row instanceRow
-	if err := rows.Scan(&row.InstanceId, &row.ServiceId, &row.PlanId, &row.Parameters, &row.State, &row.Error); err != nil {
+	if err := rows.Scan(&row.InstanceId, &row.ServiceId, &row.PlanId, &row.Parameters, &row.Outputs, &row.State, &row.Error); err != nil {
 		return nil, errors.Wrap(err, "failed to scan row")
 	}
 	return &row, nil

@@ -56,5 +56,5 @@ func RunMigrations(ctx context.Context, conn *sql.DB) error {
 		}
 	}
 
-	return err
+	return nil
 }
