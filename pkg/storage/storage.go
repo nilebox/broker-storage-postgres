@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/nilebox/broker-server/pkg/stateful/retry"
 	brokerstorage "github.com/nilebox/broker-server/pkg/stateful/storage"
+	"github.com/nilebox/broker-storage-postgres/pkg/storage/db"
 	"github.com/pkg/errors"
 )
 
@@ -60,15 +60,34 @@ var (
 	}
 )
 
-func NewPostgresStorage() retry.StorageWithLease {
-	return &postgresStorage{
-		leaseDuration: time.Minute * 5,
+func NewPostgresStorage(ctx context.Context, config *db.PostgresConfig) (*postgresStorage, error) {
+	conn, err := db.OpenConnection(config)
+	if err != nil {
+		return nil, err
 	}
+	err = db.RunMigrations(ctx, conn)
+	if err != nil {
+		closeErr := conn.Close()
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		return nil, err
+	}
+
+	return &postgresStorage{
+		ctx:           ctx,
+		db:            conn,
+		leaseDuration: time.Minute * 5,
+	}, nil
+}
+
+func (s *postgresStorage) Close() error {
+	return s.db.Close()
 }
 
 func (s *postgresStorage) CreateInstance(instanceSpec *brokerstorage.InstanceSpec) error {
 	instance := &brokerstorage.InstanceRecord{
-		InstanceSpec: *instanceSpec,
+		Spec: *instanceSpec,
 	}
 	row, err := instanceRecordToRow(instance)
 	row.Created = time.Now()
@@ -76,7 +95,7 @@ func (s *postgresStorage) CreateInstance(instanceSpec *brokerstorage.InstanceSpe
 	if err != nil {
 		return err
 	}
-	_, err = InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
+	_, err = db.InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
 		_, err := tx.ExecContext(s.ctx, QueryInsertInstance,
 			row.InstanceId, row.ServiceId, row.PlanId, row.Parameters, row.Outputs, row.State, row.Created, row.Modified, row.Error)
 		if err != nil {
@@ -92,16 +111,16 @@ func (s *postgresStorage) UpdateInstance(instanceSpec *brokerstorage.InstanceSpe
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch the instance")
 	}
-	instanceToUpdate.PlanId = instanceSpec.PlanId
-	instanceToUpdate.Parameters = instanceSpec.Parameters
-	instanceToUpdate.Outputs = instanceSpec.Outputs
+	instanceToUpdate.Spec.PlanId = instanceSpec.PlanId
+	instanceToUpdate.Spec.Parameters = instanceSpec.Parameters
+	instanceToUpdate.Spec.Outputs = instanceSpec.Outputs
 
 	row, err := instanceRecordToRow(instanceToUpdate)
 	row.Modified = time.Now()
 	if err != nil {
 		return err
 	}
-	_, err = InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
+	_, err = db.InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
 		_, err := tx.ExecContext(s.ctx, QueryUpdateInstance,
 			row.PlanId, row.Parameters, row.Outputs, row.State, row.Modified, row.Error,
 			row.InstanceId)
@@ -113,8 +132,13 @@ func (s *postgresStorage) UpdateInstance(instanceSpec *brokerstorage.InstanceSpe
 	return err
 }
 
+func (s *postgresStorage) DeleteInstance(instanceId string) error {
+	// TODO implement
+	panic("NotImplemented")
+}
+
 func (s *postgresStorage) UpdateInstanceState(instanceId string, state brokerstorage.InstanceState, errorMessage string) error {
-	_, err := InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
+	_, err := db.InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
 		_, err := tx.ExecContext(s.ctx, QueryUpdateInstanceState,
 			errorMessage, string(state), time.Now(),
 			instanceId)
@@ -131,7 +155,7 @@ func (s *postgresStorage) GetInstance(instanceId string) (*brokerstorage.Instanc
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get instance %s", instanceId)
 	}
-	defer Close(rows, nil)
+	defer db.Close(rows, nil)
 
 	row, err := getSingleInstanceRow(rows)
 	if err != nil {
@@ -141,7 +165,7 @@ func (s *postgresStorage) GetInstance(instanceId string) (*brokerstorage.Instanc
 }
 
 func (s *postgresStorage) ExtendLease(instanceIds []string) error {
-	_, err := InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
+	_, err := db.InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
 		_, err := tx.ExecContext(s.ctx, QueryExtendLease,
 			time.Now(),
 			pq.Array(instanceIds))
@@ -160,7 +184,7 @@ func (s *postgresStorage) LeaseAbandonedInstances(maxBatchSize uint32) ([]*broke
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to lease instances")
 	}
-	defer Close(rows, nil)
+	defer db.Close(rows, nil)
 
 	instanceRows, err := getInstanceRows(rows)
 	if err != nil {
@@ -214,7 +238,7 @@ func instanceRowToRecord(row *instanceRow) (*brokerstorage.InstanceRecord, error
 		return nil, errors.Wrap(err, "failed to unmarshal outputs")
 	}
 	record := &brokerstorage.InstanceRecord{
-		InstanceSpec: brokerstorage.InstanceSpec{
+		Spec: brokerstorage.InstanceSpec{
 			InstanceId: row.InstanceId,
 			ServiceId:  row.ServiceId,
 			PlanId:     row.PlanId,
@@ -228,18 +252,18 @@ func instanceRowToRecord(row *instanceRow) (*brokerstorage.InstanceRecord, error
 }
 
 func instanceRecordToRow(record *brokerstorage.InstanceRecord) (*instanceRow, error) {
-	parameters, err := rawMessageToString(record.Parameters)
+	parameters, err := rawMessageToString(record.Spec.Parameters)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal parameters")
 	}
-	outputs, err := rawMessageToString(record.Outputs)
+	outputs, err := rawMessageToString(record.Spec.Outputs)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal outputs")
 	}
 	row := &instanceRow{
-		InstanceId: record.InstanceId,
-		ServiceId:  record.ServiceId,
-		PlanId:     record.PlanId,
+		InstanceId: record.Spec.InstanceId,
+		ServiceId:  record.Spec.ServiceId,
+		PlanId:     record.Spec.PlanId,
 		Parameters: parameters,
 		Outputs:    outputs,
 		State:      string(record.State),

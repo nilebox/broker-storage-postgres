@@ -47,6 +47,18 @@
   revision = "88edab0803230a3898347e77b474f8c1820a1f20"
 
 [[projects]]
+  name = "github.com/mattes/migrate"
+  packages = [
+    ".",
+    "database",
+    "database/postgres",
+    "source",
+    "source/file"
+  ]
+  revision = "035c07716cd373d88456ec4d701402df52584cb4"
+  version = "v3.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/nilebox/broker-server"
   packages = [
@@ -60,7 +72,7 @@
     "pkg/util",
     "pkg/zappers"
   ]
-  revision = "b0cfb954bf11ff350c8439e7bfb65ada21eab0fb"
+  revision = "44200d214cc9043a4936332fc61a1cfcdb40c84a"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -102,6 +114,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a66732dbeee1dcbc3ad2faf77d619878c39eccc171095084810671fef7ff0c8c"
+  inputs-digest = "b52dd54ac8c80c79c95967356144d73d9607a1cc5b4c84e2f860a9cabf85494f"
   solver-name = "gps-cdcl"
   solver-version = 1

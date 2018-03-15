@@ -9,13 +9,21 @@ import (
 	"os/signal"
 	"syscall"
 
+	examplebroker "github.com/nilebox/broker-storage-postgres/example/broker"
+	"github.com/nilebox/broker-storage-postgres/pkg/server"
+	"github.com/nilebox/broker-storage-postgres/pkg/storage/db"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"github.com/nilebox/broker-storage-postgres/example/server"
 )
 
 const (
 	defaultAddr = ":8080"
+
+	defaultPgDatabase = "osb"
+	defaultPgHost     = "localhost"
+	defaultPgPort     = 5432
+	defaultPgUsername = "test"
+	defaultPgPassword = "test"
 )
 
 func main() {
@@ -44,13 +52,31 @@ func runWithContext(ctx context.Context) error {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
 	addr := fs.String("addr", defaultAddr, "Address to listen on")
+	pgDatabase := fs.String("pg_database", defaultPgDatabase, "Database to use for PostgreSQL")
+	pgHost := fs.String("pg_host", defaultPgHost, "Hostname to use for PostgreSQL")
+	pgPort := fs.Int("pg_port", defaultPgPort, "Port to use for PostgreSQL")
+	pgUsername := fs.String("pg_username", defaultPgUsername, "Username to use for PostgreSQL")
+	pgPassword := fs.String("pg_password", defaultPgPassword, "Password to use for PostgreSQL")
 
 	fs.Parse(os.Args[1:]) // nolint: gas
 
-	app := server.ExampleServer{
+	broker, err := examplebroker.NewExampleBroker(log)
+	if err != nil {
+		// TODO log error and exit
+		panic(err.Error())
+	}
+
+	app := server.PostgresBrokerServer{
 		Addr: *addr,
 	}
-	return app.Run(ctx)
+	pgConfig := db.PostgresConfig{
+		Database: *pgDatabase,
+		Host:     *pgHost,
+		Port:     *pgPort,
+		Username: *pgUsername,
+		Password: *pgPassword,
+	}
+	return app.Run(ctx, examplebroker.Catalog(), broker, &pgConfig)
 }
 
 func initializeLogger() *zap.Logger {

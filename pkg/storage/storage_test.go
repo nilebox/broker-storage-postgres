@@ -1,5 +1,5 @@
 package storage
 
-import "github.com/nilebox/broker-server/pkg/stateful/retry"
+import brokerstorage "github.com/nilebox/broker-server/pkg/stateful/storage"
 
-var _ retry.StorageWithLease = &postgresStorage{}
+var _ brokerstorage.StorageWithLease = &postgresStorage{}
