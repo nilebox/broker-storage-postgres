@@ -17,10 +17,7 @@ type PostgresBrokerServer struct {
 	Addr string
 }
 
-func (b *PostgresBrokerServer) Run(ctx context.Context, catalog *api.Catalog, broker task.Broker, config *db.PostgresConfig) (returnErr error) {
-	log := ctx.Value("log").(*zap.Logger)
-	_ = log
-
+func (b *PostgresBrokerServer) Run(ctx context.Context, log *zap.Logger, catalog *api.Catalog, broker task.Broker, config *db.PostgresConfig) (returnErr error) {
 	// Create a storage for OSB
 	strg, err := storage.NewPostgresStorage(ctx, config)
 	if err != nil {

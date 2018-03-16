@@ -40,8 +40,10 @@ const (
 	// TODO don't set outputs there
 	QueryUpdateInstance = "UPDATE instance SET plan_id = $1, parameters = $2, outputs = $3, state = $4, modified = $5, error = $6 " +
 		"WHERE instance_id = $7"
+	QueryDeleteInstance = "UPDATE instance SET state = $1 " +
+		"WHERE instance_id = $2"
 	QueryUpdateInstanceState = "UPDATE instance SET error = $1, state = $2, modified = $3 " +
-		"WHERE instance_id = :instanceId"
+		"WHERE instance_id = $4"
 	QueryUpdateInstanceOutputs = "UPDATE instance SET outputs = $1 " +
 		"WHERE instance_id = $2"
 	QueryExtendLease = "UPDATE instance SET modified = $1 " +
@@ -139,8 +141,16 @@ func (s *postgresStorage) UpdateInstance(instanceSpec *brokerstorage.InstanceSpe
 }
 
 func (s *postgresStorage) DeleteInstance(instanceId string) error {
-	// TODO implement
-	panic("NotImplemented")
+	_, err := db.InTransaction(s.db, func(tx *sql.Tx) (result interface{}, returnErr error) {
+		_, err := tx.ExecContext(s.ctx, QueryDeleteInstance,
+			string(brokerstorage.InstanceStateDeleteInProgress),
+			instanceId)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to mark instance for deletion")
+		}
+		return nil, nil
+	})
+	return err
 }
 
 func (s *postgresStorage) UpdateInstanceState(instanceId string, state brokerstorage.InstanceState, errorMessage string) error {
@@ -205,7 +215,7 @@ func (s *postgresStorage) ExtendLease(instanceIds []string) error {
 func (s *postgresStorage) LeaseAbandonedInstances(maxBatchSize uint32) ([]*brokerstorage.InstanceRecord, error) {
 	now := time.Now()
 	expire := now.Add(-s.leaseDuration)
-	rows, err := s.db.QueryContext(s.ctx, QueryLeaseAbandoned, time.Now(), inProgressStates, expire, maxBatchSize)
+	rows, err := s.db.QueryContext(s.ctx, QueryLeaseAbandoned, time.Now(), pq.Array(inProgressStates), expire, maxBatchSize)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to lease instances")
 	}
@@ -216,7 +226,7 @@ func (s *postgresStorage) LeaseAbandonedInstances(maxBatchSize uint32) ([]*broke
 	if err != nil {
 		return nil, returnErr
 	}
-	instanceRecords := make([]*brokerstorage.InstanceRecord, 0, len(instanceRows))
+	instanceRecords := make([]*brokerstorage.InstanceRecord, len(instanceRows))
 	for i, instanceRow := range instanceRows {
 		instanceRecord, err := instanceRowToRecord(instanceRow)
 		if err != nil {

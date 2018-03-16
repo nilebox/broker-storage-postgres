@@ -42,13 +42,10 @@ func run() error {
 	defer log.Sync()
 	ctx = context.WithValue(ctx, "log", log)
 
-	return runWithContext(ctx)
+	return runWithContext(ctx, log)
 }
 
-func runWithContext(ctx context.Context) error {
-	log := ctx.Value("log").(*zap.Logger)
-	_ = log
-
+func runWithContext(ctx context.Context, log *zap.Logger) error {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
 	addr := fs.String("addr", defaultAddr, "Address to listen on")
@@ -76,7 +73,7 @@ func runWithContext(ctx context.Context) error {
 		Username: *pgUsername,
 		Password: *pgPassword,
 	}
-	return app.Run(ctx, examplebroker.Catalog(), broker, &pgConfig)
+	return app.Run(ctx, log, examplebroker.Catalog(), broker, &pgConfig)
 }
 
 func initializeLogger() *zap.Logger {

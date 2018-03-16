@@ -7,6 +7,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nilebox/broker-server/pkg/stateful/task"
+	"github.com/nilebox/broker-server/pkg/zappers"
+	"time"
 )
 
 const (
@@ -60,13 +62,29 @@ func Catalog() *brokerapi.Catalog {
 }
 
 func (c *exampleBroker) CreateInstance(instanceId string, parameters json.RawMessage) (json.RawMessage, error) {
-	return nil, nil
+	log := c.log.With(zappers.InstanceID(instanceId))
+	log.Sugar().Infof("CreateInstance: instanceId=%s", instanceId)
+	// Pretend to do some work
+	time.Sleep(time.Second * 10)
+	return rawMessage(`{ "dbPasswordCreate": "abc" }`), nil
 }
 
 func (c *exampleBroker) UpdateInstance(instanceId string, parameters json.RawMessage) (json.RawMessage, error) {
-	return nil, nil
+	log := c.log.With(zappers.InstanceID(instanceId))
+	log.Sugar().Infof("UpdateInstance: instanceId=%s", instanceId)
+	// Pretend to do some work
+	time.Sleep(time.Second * 10)
+	return rawMessage(`{ "dbPasswordUpdate": "def" }`), nil
 }
 
 func (c *exampleBroker) DeleteInstance(instanceId string, parameters json.RawMessage) error {
+	log := c.log.With(zappers.InstanceID(instanceId))
+	log.Sugar().Infof("DeleteInstance: instanceId=%s", instanceId)
+	// Pretend to do some work
+	time.Sleep(time.Second * 10)
 	return nil
+}
+
+func rawMessage(jsonStr string) json.RawMessage {
+	return json.RawMessage([]byte(jsonStr))
 }

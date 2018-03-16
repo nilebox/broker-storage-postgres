@@ -72,7 +72,7 @@
     "pkg/util",
     "pkg/zappers"
   ]
-  revision = "1460498da329425af864bccc4052c4089751a51c"
+  revision = "54ed67ae61ec680debd6b1768d430b8b46fc30fa"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -114,6 +114,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b52dd54ac8c80c79c95967356144d73d9607a1cc5b4c84e2f860a9cabf85494f"
+  inputs-digest = "3b866cdbd4934caf89e609c8de90e2e9c71cd38f7a87a6be158ac725964768fb"
   solver-name = "gps-cdcl"
   solver-version = 1
